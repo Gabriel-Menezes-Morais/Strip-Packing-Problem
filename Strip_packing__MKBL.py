@@ -1,4 +1,4 @@
-from usefull.verif_func import check_inside
+from usefull.verif_func import Minkowski_Sum, check_inside, Minkowski_Sum
 from Class.class_polygon import polygon
 from Class.class_point import Point
 import matplotlib.pyplot as plt
@@ -10,7 +10,7 @@ Ainda que não alcance a solução ótima. Ainda sim, de acordo com o artigo
 """
 
 # Para compilar:
-# Get-Content Instances/instance01.txt | python Strip_packing_BL.py
+# Get-Content Instances/instance02.txt | python Strip_packing__MKBL.py
 
 def mostrar_animacao(historico, strip_height):
     if not historico:
@@ -91,24 +91,7 @@ for i in range(num_p):
 # A matriz NFPs[i][j] guarda a geometria que define onde J não pode encostar em I.
 # Para o algoritmo Bottom-Left simples, aproximamos NFP como bounding boxes
 print("\n--- Generating NFP Approximations ---")
-NFPs = []
-for i in range(len(polygons)):
-    NFPs.append([]) # Cria uma nova linha na matriz
-    # Para cada tipo de polígono, precisamos gerar um NFP contra cada outro tipo (inclusive ele mesmo)
-    # Mas para o mesmo tipo, não precisamos gerar NFP
-    
-    for j in range(len(polygons)):
-
-        print(f"\nDefining NFP: Mobile Type {j} sliding around Fixed Type {i}")
-        v_nfp = int(input(f"How many vertices does this NFP have?\n"))
-        
-        
-        nfp_poly = polygon(v_nfp, 0)
-        
-        for k in range(v_nfp):
-            nfp_poly.vertex(k)
-        
-        NFPs[i].append(nfp_poly)          
+NFPs = Minkowski_Sum(polygons)
 
 allocated = [] # Guarda tuplas: (Indice_Tipo, Indice_Copia_Usada)
 flag = 0

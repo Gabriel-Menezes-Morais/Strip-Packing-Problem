@@ -63,7 +63,7 @@ def get_angle(vector):
     return rad
 
 def reorder_edges_by_angle(edges):
-    """Ordena arestas (vetores) por ângulo para o Slope Diagram."""
+    # Ordena arestas (vetores) por ângulo para o Slope Diagram.
     if not edges:
         return []
     
@@ -72,10 +72,12 @@ def reorder_edges_by_angle(edges):
     angles.sort()
     
     start_idx = angles[0][1]
+
+    # Reordenar as arestas começando pela de menor ângulo
     return [edges[(start_idx + i) % len(edges)] for i in range(len(edges))]
 
 def get_edges(pol):
-    #Aqui, iremos coletar as arestas de cada polígono
+    # Aqui, iremos coletar as arestas de cada polígono
     points = pol.vertex_list
     edges = []
     for i in range(len(points)):
@@ -84,64 +86,35 @@ def get_edges(pol):
         edges.append(p2 - p1)
     return edges
 def get_negative_B(polB):
-    # Pegamos o espaço vetorial -B para realizar a diferença de Mikowski
-    # e criar o NFP
+    # Pegamos o espaço vetorial -B para realizar a diferença de Mikowski e criar o NFP
     neg_points = [Point(-p.x, -p.y) for p in polB.vertex_list]
     # Reverter para manter sentido CCW ao negar
-    neg_points = neg_points[::-1]
+    #neg_points = neg_points[::-1] ???????
     neg_poly = polygon(len(neg_points), 0)
     neg_poly.vertex_list = neg_points
     return neg_poly
 
-def lowest_left_vertex(points):
+def bottom_left_vertex(points):
     idx_min = 0
 
     for i in range(1, len(points)):
         current = points[i]
         lowest = points[idx_min]
 
-        if(current.y < lowest.y) or (current.y == lowest.y and current.x < lowest.x):
+        if(current.y < lowest.y and current.x <= lowest.x) or (current.y == lowest.y and current.x < lowest.x):
             idx_min = i
     
     return idx_min
 
-def reorder_by_angle(points):
-
-    start_idx = lowest_left_vertex(points)
-
-    return points[start_idx:] + points[:start_idx]
-
-def normalize_polygon(pol):
-    """
-    Normaliza o polígono movendo o vértice inferior esquerdo para a origem (0, 0).
-    Isso é essencial para o cálculo correto do NFP via Soma de Minkowski.
-    """
-    if not pol.vertex_list:
-        return pol
-    
-    # Encontra o vértice inferior esquerdo
-    idx = lowest_left_vertex(pol.vertex_list)
-    ref_vertex = pol.vertex_list[idx]
-    
-    # Cria uma cópia normalizada do polígono
-    normalized_poly = polygon(len(pol.vertex_list), 0)
-    normalized_poly.vertex_list = [
-        Point(v.x - ref_vertex.x, v.y - ref_vertex.y) 
-        for v in pol.vertex_list
-    ]
-    
-    return normalized_poly
-
-def Mikowski_Sum(polygons):
+def Minkowski_Sum(polygons):
     NFPs = []
     for i in range(len(polygons)):
         NFPs.append([])
         for j in range(len(polygons)):
             print(f"\nBuilding through Mikowski Sum the NFP between {j} sliding around fixed type {i}.")
 
-            # Normaliza os polígonos antes de calcular o NFP
-            polA = normalize_polygon(polygons[i])
-            polB = normalize_polygon(polygons[j])
+            polA = polygons[i]
+            polB = polygons[j]
             polB_neg = get_negative_B(polB)
 
             edgesA = get_edges(polA)
@@ -156,6 +129,7 @@ def Mikowski_Sum(polygons):
             na, nb = len(edgesA), len(edgesB)
 
             # Loop até ter processado todas as arestas de ambos os polígonos
+            # O Slope Diagram é construído comparando os ângulos das arestas de A e B e mesclando-as em ordem crescente de ângulo
             while ia < na and ib < nb:
                 vecA = edgesA[ia]
                 vecB = edgesB[ib]
@@ -188,8 +162,8 @@ def Mikowski_Sum(polygons):
                 ib += 1
             
             # Pegar índices dos vértices mais baixos à esquerda
-            start_idxA = lowest_left_vertex(polA.vertex_list)
-            start_idxB = lowest_left_vertex(polB_neg.vertex_list)
+            start_idxA = bottom_left_vertex(polA.vertex_list)
+            start_idxB = bottom_left_vertex(polB_neg.vertex_list)
             
             # Somar as coordenadas dos pontos de partida
             start_point = Point(
@@ -206,14 +180,14 @@ def Mikowski_Sum(polygons):
                 nfp_points.append(current)
 
             # Verificar se o polígono fecha corretamente
-            # O último ponto deve ser igual ao primeiro (ou muito próximo)
+            # O último ponto deve ser igual ao primeiro
             if len(merged_edges) > 0:
                 final_check = current + merged_edges[-1]
                 dist = math.sqrt((final_check.x - start_point.x)**2 + (final_check.y - start_point.y)**2)
                 if dist > 1e-6:
                     print(f"WARNING: NFP polygon doesn't close properly. Distance: {dist}")
 
-            # Criar polígono para o NFP (sem duplicar o primeiro vértice)
+            # Criar polígono para o NFP
             nfp_poly = polygon(len(nfp_points), 0)
             nfp_poly.vertex_list = nfp_points
             NFPs[i].append(nfp_poly)
