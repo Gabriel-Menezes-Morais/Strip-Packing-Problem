@@ -3,7 +3,7 @@ Nesse algoritmo, iremos desenvolver a heurística bottom-left, de modo a resolve
 Ainda que não alcance a solução ótima. Ainda sim, de acordo com o artigo 
 """
 
-from useful.verif_func import check_inside
+from usefull.verif_func import check_inside
 from Class.class_polygon import polygon
 
 polygons = []

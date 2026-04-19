@@ -132,8 +132,6 @@ while True:
             limits_y = sorted(list(set([max(0, y) for y in limits_y])))
             # Agora, nós temos os limites necessários para realizar o algoritmo Bottom-Left
         if first_place == 0:
-            limits_x.sort()
-            limits_y.sort()
 
             pos_encontrada = False
             for X in limits_x:

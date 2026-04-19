@@ -24,6 +24,8 @@ def check_inside(nfp_poly, ref_Point, Point_teste):
     Pontos na borda (D == 0) são considerados FORA (sem colisão), permitindo toque.
     Apenas pontos estritamente internos (D > 0 em todas arestas) causam colisão.
     """
+
+    
     vertices = nfp_poly.vertex_list
     n = len(vertices)
     if n == 0: return False
@@ -89,7 +91,6 @@ def get_negative_B(polB):
     # Pegamos o espaço vetorial -B para realizar a diferença de Mikowski e criar o NFP
     neg_points = [Point(-p.x, -p.y) for p in polB.vertex_list]
     # Reverter para manter sentido CCW ao negar
-    #neg_points = neg_points[::-1] ???????
     neg_poly = polygon(len(neg_points), 0)
     neg_poly.vertex_list = neg_points
     return neg_poly
@@ -101,7 +102,7 @@ def bottom_left_vertex(points):
         current = points[i]
         lowest = points[idx_min]
 
-        if(current.y < lowest.y and current.x <= lowest.x) or (current.y == lowest.y and current.x < lowest.x):
+        if (current.y < lowest.y) or (current.y == lowest.y and current.x < lowest.x):
             idx_min = i
     
     return idx_min
@@ -193,3 +194,77 @@ def Minkowski_Sum(polygons):
             NFPs[i].append(nfp_poly)
 
     return NFPs
+
+def segment_intersectionn(p1, p2, p3, p4):
+    # Calcula a interseção entre os segmentos p1p2 e p3p4
+    denom = (p2.x - p1.x) * (p4.y - p3.y) - (p2.y - p1.y) * (p4.x - p3.x)
+    
+    if abs(denom) < 1e-10:
+        print("Segments are parallel or coincident.")
+        return None  # Segmentos são paralelos ou coincidentes
+        
+    ua = ((p3.x - p4.x) * (p1.y - p3.y) - (p3.y - p4.y) * (p1.x - p3.x)) / denom
+    ub = -((p1.x - p2.x) * (p1.y - p3.y) - (p1.y - p2.y) * (p1.x - p3.x)) / denom
+    
+    print(f"Calculated ua: {ua}, ub: {ub}")
+    if 0 <= ua <= 1 and 0 <= ub <= 1:
+        # Os segmentos se intersectam dentro dos limites
+        print("intersect true")
+        return Point(p1.x + ua * (p2.x - p1.x), p1.y + ua * (p2.y - p1.y))
+    
+    return None  # Os segmentos não se intersectam dentro dos limites 
+
+def segment_intersection(p1, p2, p3, p4):
+    """
+    Calcula a intersecção entre dois segmentos de reta: (p1, p2) e (p3, p4).
+    Retorna o Ponto de intersecção se houver, ou None caso não se cruzem.
+    """
+    x1, y1 = p1.x, p1.y
+    x2, y2 = p2.x, p2.y
+    x3, y3 = p3.x, p3.y
+    x4, y4 = p4.x, p4.y
+
+    # Denominador (produto vetorial das direções)
+    den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+    if den == 0:
+        return None # Linhas são paralelas ou colineares
+    
+    # Parâmetros t e u das equações paramétricas das retas
+    t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
+    u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den
+
+    # Se t e u estiverem entre 0 e 1, os segmentos se cruzam
+    if 0 <= t <= 1 and 0 <= u <= 1:
+        intersec_x = x1 + t * (x2 - x1)
+        intersec_y = y1 + t * (y2 - y1)
+        return Point(intersec_x, intersec_y)
+    
+    return None
+
+def check_inside_cand(allocated, NFPs, polygons, point, Index):
+
+    collision = False
+
+    for (aloc_type_idx, aloc_copy_idx) in allocated:
+        # Pegamos o NFP correto da matriz: Fixo (aloc_type) vs Móvel (idx)
+        nfp_obj = NFPs[aloc_type_idx][Index]
+
+        # Pegamos a posição exata onde a peça fixa está
+        pos_ref_alocado = polygons[aloc_type_idx].position[aloc_copy_idx]
+
+        # Verificamos se a nova posição cai dentro desse NFP
+        # (Se cair dentro, significa que as formas físicas se sobrepõem)
+        pos_esc = Point(point.x, point.y)
+        print(f"Checking collision against Polygon {aloc_type_idx} (Copy {aloc_copy_idx}) at position ({pos_ref_alocado.x}, {pos_ref_alocado.y}) with test position ({pos_esc.x}, {pos_esc.y})")
+        if check_inside(nfp_obj, pos_ref_alocado, pos_esc):
+            print(f"COLLISION detected with Polygon {aloc_type_idx} (Copy {aloc_copy_idx}) at position ({pos_ref_alocado.x}, {pos_ref_alocado.y})!")
+            collision = True
+            break # Para de testar, já bateu
+
+    if not collision:
+        print("No collision detected for this candidate position.")
+        return True
+    else:     
+        print("Candidate position is invalid due to collision.")
+        return False
+        
