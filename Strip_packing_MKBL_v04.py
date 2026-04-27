@@ -1,4 +1,6 @@
-import math
+import time
+import pandas as pd
+import os
 
 from usefull.verif_func import Minkowski_Sum, check_inside, Minkowski_Sum, segment_intersection, check_inside_cand
 from Class.class_polygon import polygon
@@ -64,10 +66,27 @@ limits_y = []
 limits_x.append(0)
 limits_y.append(0)
 
+# Cronometra apenas a fase de alocação iterativa.
+allocation_start_time = time.perf_counter()
+
 # Configuração Inicial
 height = int(input("What is the strip height?\n"))
 numbers_p = int(input("How many TYPES of convex polygons?\n"))
 num_p = numbers_p
+
+# Tolerância numérica para comparações geométricas
+EPSILON = 1e-9
+
+
+def is_out_of_bounds(candidate, x_min, y_min, y_max, strip_height, epsilon=EPSILON):
+    """Valida limites da faixa com tolerância numérica."""
+    if candidate.x < (x_min - epsilon):
+        return True
+    if candidate.y > (strip_height - y_max + epsilon):
+        return True
+    if candidate.y < (y_min - epsilon):
+        return True
+    return False
 
 # Definição da Geometria dos Polígonos
 for i in range(num_p):
@@ -92,29 +111,72 @@ for i in range(num_p):
 # Definição da Matriz NFP (No-Fit Polygon)
 # A matriz NFPs[i][j] guarda a geometria que define onde J não pode encostar em I.
 # Para o algoritmo Bottom-Left simples, aproximamos NFP como bounding boxes
-print("\n--- Generating NFP Approximations ---")
-NFPs = Minkowski_Sum(polygons)
 
 allocated = [] # Guarda tuplas: (Indice_Tipo, Indice_Copia_Usada)
 flag = 0
 pos = Point(0, 0)
 pos_encontrada = None
 first_place = 1 # Variável para controlar se é a primeira peça a ser alocada
+
+order = input("\nWhich order do you want to allocate? (0 to allocate by your choice, 1 to allocate by area)\n")
+
+print("\n--- Generating NFP Approximations ---")
+NFPs = Minkowski_Sum(polygons)
+
+if order == '1':
+    # para cada polígono, calcular a área e ordenar por área decrescente
+    for pol in polygons:
+        pol.area()
+    sorted_polygons = sorted(enumerate(polygons), key=lambda x: x[1].area_value, reverse=True)
+    flag = 0
+    idx_copy = -1
 while True:
     cont = input("\nAllocate polygon? (y/n): ")
     if cont.lower() != 'y': break
 
     try:
-        Index = int(input("\nWhich polygon type do you want to place?"))
+        if order == '0':
+            Index = int(input("\nWhich polygon type do you want to place?"))
+
+            idx_copy = 0
+            if polygons[Index].copy >= 1:
+                # Pergunta qual das cópias pré-definidas usar
+                idx_copy = int(input(f"Which copy index (0 to {len(polygons[Index].position)-1})?\n"))
+                if idx_copy < 0 or idx_copy >= len(polygons[Index].position):
+                    print("Invalid copy index.")
+                    continue
+        elif order == '1':
+            # Avança para o próximo tipo com cópias disponíveis.
+            while flag < len(sorted_polygons) and polygons[sorted_polygons[flag][0]].copy <= 0:
+                flag += 1
+                idx_copy = -1
+
+            if flag >= len(sorted_polygons):
+                print("All polygons allocated.")
+                break
+
+            Index = sorted_polygons[flag][0]
+
+            # Seleciona a próxima cópia livre (posição ainda não utilizada).
+            idx_copy = next(
+                (i for i, posicao in enumerate(polygons[Index].position) if posicao is None),
+                -1
+            )
+
+            if idx_copy == -1:
+                # Estado inconsistente: não há slot livre apesar de haver cópias.
+                polygons[Index].copy = 0
+                flag += 1
+                continue
+        else:
+            print("Invalid order.")
+            continue
+
         if Index >= len(polygons) or Index < 0 or polygons[Index].copy <= 0:
+            print(f"{Index >= len(polygons)} | {Index < 0} | {polygons[Index].copy <= 0}")
             print("Invalid index.")
             continue # Volta ao inicio do while
-
-        idx_copy = 0
-        if polygons[Index].copy >= 1:
-            # Pergunta qual das cópias pré-definidas usar
-            idx_copy = int(input(f"Which copy index (0 to {len(polygons[Index].position)-1})?\n"))
-
+        
         X_min, X_max, Y_min, Y_max = polygons[Index].height()
 
         collision = False
@@ -152,24 +214,26 @@ while True:
 
                     # Testar intersecção do segmento com os limites da faixa
                     #if test_x < 0 or test_y < 0 or test_y > height:
-                    if not ((p1.x < 0 or p1.y < 0 or p1.y > height) and (p2.x < 0 or p2.y < 0 or p2.y > height)):
+                    if not ((p1.x < -EPSILON or p1.y < -EPSILON or p1.y > height + EPSILON) and (p2.x < -EPSILON or p2.y < -EPSILON or p2.y > height + EPSILON)):
                         # Posição candidata é o ponto de intersecção do segmento com o limite da faixa
                         limit_faixa = [
-                            (Point(0, 0), Point(0, height)), # Limite esquerdo
+                            (Point(0, 0), Point(0, height - Y_max)), # Limite esquerdo
                             (Point(0, 0), Point(MAX_X, 0)), # Limite inferior
-                            (Point(0, height), Point(MAX_X, height)) # Limite superior
+                            (Point(0, height - Y_max), Point(MAX_X, height - Y_max)) # Limite superior
                         ]
 
                         for p3, p4 in limit_faixa:
+                            # p3 e p4 definem um segmento do limite da faixa
+                            # p3 = Point(0, 0), p4 = Point(0, height - Y_max) para o limite esquerdo
+                            # p3 = Point(0, 0), p4 = Point(MAX_X, 0) para o limite inferior
+                            # p3 = Point(0, height - Y_max), p4 = Point(MAX_X, height - Y_max) para o limite superior
                             intersec = segment_intersection(p1, p2, p3, p4)
                             print(f"Testing segment ({p1.x}, {p1.y}) to ({p2.x}, {p2.y}) against limit from ({p3.x}, {p3.y}) to ({p4.x}, {p4.y})")
                             print(f"Intersection result: {('None' if intersec is None else f'({intersec.x}, {intersec.y})')}")
                             if intersec:
                                 
                                 # Testar se o ponto está dentro da faixa
-                                if ((intersec.x - X_min) < 0 or 
-                                    (intersec.y + Y_max) > height or 
-                                    (intersec.y - Y_min) < 0):
+                                if is_out_of_bounds(intersec, X_min, Y_min, Y_max, height):
                                     print(f"Candidate position ({intersec.x}, {intersec.y}) is out of bounds. Skipping.")
                                     continue
 
@@ -212,9 +276,7 @@ while True:
                             
                             if intersec:
                                     # Testar se o ponto está dentro da faixa
-                                    if ((intersec.x - X_min) < 0 or 
-                                        (intersec.y + Y_max) > height or 
-                                        (intersec.y - Y_min) < 0):
+                                    if is_out_of_bounds(intersec, X_min, Y_min, Y_max, height):
                                         print(f"Candidate position ({intersec.x}, {intersec.y}) is out of bounds. Skipping.")
                                         continue
 
@@ -245,11 +307,11 @@ while True:
                     vertices = [(v.x + plot_pos.x, v.y + plot_pos.y) for v in polygons[plot_type_idx].vertex_list]
                     vertices.append(vertices[0])  # Fechar o polígono
                     xs, ys = zip(*vertices)
-                    plt.plot(xs, ys, label=f'Polygon Type {plot_type_idx} Copy {plot_copy_idx}')
+                #     plt.plot(xs, ys, label=f'Polygon Type {plot_type_idx} Copy {plot_copy_idx}')
                 # Defining strip height for visualization
-                plt.axhline(y=height, color='r', linestyle='--', label='Strip Height')
-                plt.legend()
-                plt.show()
+                # plt.axhline(y=height, color='r', linestyle='--', label='Strip Height')
+                # plt.legend()
+                # plt.show()
                 
 
                 historico_animacao.append({
@@ -266,9 +328,7 @@ while True:
             pos = Point(X_min, Y_min)
 
             print(f"Testing first placement at ({pos.x}, {pos.y})")
-            if ((pos.x - X_min) < 0 or 
-                (pos.y + Y_max) > height or 
-                (pos.y - Y_min) < 0):
+            if is_out_of_bounds(pos, X_min, Y_min, Y_max, height):
                 print("Error: Out of bounds.")
                 continue
             else:
@@ -285,11 +345,11 @@ while True:
                 vertices = [(v.x + pos.x, v.y + pos.y) for v in polygons[Index].vertex_list]
                 vertices.append(vertices[0])  # Fechar o polígono
                 xs, ys = zip(*vertices)
-                plt.plot(xs, ys, label=f'Polygon Type {Index} Copy {idx_copy}')
+                # plt.plot(xs, ys, label=f'Polygon Type {Index} Copy {idx_copy}')
                 # Defining strip height for visualization
-                plt.axhline(y=height, color='r', linestyle='--', label='Strip Height')
-                plt.legend()
-                plt.show()
+                # plt.axhline(y=height, color='r', linestyle='--', label='Strip Height')
+                # plt.legend()
+                # plt.show()
 
                 print(f"Polygon Type {Index} Copy {idx_copy} allocated at ({polygons[Index].position[idx_copy].x}, {polygons[Index].position[idx_copy].y})")
                 
@@ -304,6 +364,84 @@ while True:
         print("Finished animation.")
         
     except (ValueError, IndexError) as e:
-        print("Invalid input error {e}")
+        print(f"Invalid input error: {e}")
+
+allocation_total_time = time.perf_counter() - allocation_start_time
 
 mostrar_animacao(historico_animacao, height)
+
+# Resumo final em formato de tabela.
+
+if historico_animacao:
+    max_length = max(v.x for h in historico_animacao for v in h['vertices'])
+else:
+    max_length = 0.0
+
+summary_rows = [
+    ("Pecas alocadas", str(len(allocated))),
+    ("Comprimento maximo na faixa", f"{max_length:.4f}"),
+    ("Tempo total de alocacao (s)", f"{allocation_total_time:.6f}"),
+]
+
+header_metric = "Metrica"
+header_value = "Valor"
+metric_width = max(len(header_metric), *(len(metric) for metric, _ in summary_rows))
+value_width = max(len(header_value), *(len(value) for _, value in summary_rows))
+separator = f"+-{'-' * metric_width}-+-{'-' * value_width}-+"
+
+print("\nResumo final da alocacao")
+print(separator)
+print(f"| {header_metric.ljust(metric_width)} | {header_value.ljust(value_width)} |")
+print(separator)
+for metric, value in summary_rows:
+    print(f"| {metric.ljust(metric_width)} | {value.ljust(value_width)} |")
+print(separator)
+
+# Criar um DataFrame do pandas para exibir a tabela de resumo, onde cada coluna é uma métrica e cada linha é um valor correspondente de um determinado algoritmo ou configuração testada. Isso facilita a comparação entre diferentes abordagens ou parâmetros.
+
+# Criar DataFrame do pandas para o resumo final e criar o csv com os resultados
+
+# Conferir se ja existe o csv
+csv_file = "resumo_alocacao.csv"
+if os.path.exists(csv_file):
+    df_summary = pd.read_csv(csv_file)
+
+    # Adicionar nova linha ao DataFrame existente
+    new_row = {
+        "Algoritmo": "MKBL order by area" if order == '1' else "MKBL user choice",
+        "Allocated Pieces": len(allocated),
+        "Max Length on Strip": f"{max_length:.4f}",
+        "Total Allocation Time (s)": f"{allocation_total_time:.6f}"
+    }
+    df_summary.loc[len(df_summary)] = new_row
+    df_summary.to_csv(csv_file, index=False)
+
+else:
+    # Se o csv não existe, criar o df e salvar em um arquvio csv
+    df_summary = pd.DataFrame({
+    "Algoritmo": ["MKBL order by area" if order == '1' else "MKBL user choice"],
+    "Allocated Pieces": [len(allocated)],
+    "Max Length on Strip": [f"{max_length:.4f}"],
+    "Total Allocation Time (s)": [f"{allocation_total_time:.6f}"]
+    })
+    df_summary.to_csv(csv_file, index=False)
+    
+    
+
+# print("\nResumo final da alocacao (DataFrame do pandas)")
+# print(df_summary)
+
+# # Imprimir os vértices de cada peça alocada para armazenar em um arquivo de texto ou para análise posterior
+# print("\nVertices de cada peça alocada:")
+# for (plot_type_idx, plot_copy_idx) in allocated:
+#     plot_pos = polygons[plot_type_idx].position[plot_copy_idx]
+#     vertices = [(v.x + plot_pos.x, v.y + plot_pos.y) for v in polygons[plot_type_idx].vertex_list]
+#     print(f"Polygon Type {plot_type_idx} Copy {plot_copy_idx} at position ({plot_pos.x}, {plot_pos.y}) with vertices: {vertices}")
+
+# # Armazenar em txt
+# with open("allocated_pieces_vertices.txt", "w") as f:
+#     for (plot_type_idx, plot_copy_idx) in allocated:
+#         plot_pos = polygons[plot_type_idx].position[plot_copy_idx]
+#         vertices = [(v.x + plot_pos.x, v.y + plot_pos.y) for v in polygons[plot_type_idx].vertex_list]
+#         f.write(f"Polygon Type {plot_type_idx} Copy {plot_copy_idx} at position ({plot_pos.x}, {plot_pos.y}) with vertices: {vertices}\n")
+

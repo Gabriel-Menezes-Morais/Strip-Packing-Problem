@@ -1,6 +1,5 @@
 from typing import List
-from Class.class_point import Point
-import streamlit as st
+from class_app.class_point_app import Point
 
 class polygon:
     def __init__(self, vertices, copy):
@@ -58,26 +57,28 @@ class polygon:
         """Solicita ao usuário as posições iniciais de todas as cópias."""
         for k in range(self.copy):
             try:
-                raw_input = st.text_input(f"What is the coordinates for copy {k} of Type {i} (x y)?\n").split()
+                raw_input = input(f"What is the coordinates for copy {k} of Type {i} (x y)?\n").split()
                 pos = list(map(float, raw_input))
                 
                 # Armazena diretamente o Ponto na lista de posições
                 novo_Point = Point(x=pos[0], y=pos[1])
                 self.position.append(novo_Point)
             except ValueError:
-                st.error("Invalid input.")
+                print("Invalid input.")
                 self.position.append(Point(0,0))
 
     def vertex(self, j): 
         """Solicita e armazena um vértice."""
         try:
-            raw = st.text_input(f"Vertex {j} coordinates (x y)?\n").split()
+            raw = input(f"Vertex {j} coordinates (x y)?\n").split()
             xy = list(map(float, raw))
             novo_Point = Point(x=xy[0], y=xy[1])
 
+            print(f"Vertex added: ({novo_Point.x}, {novo_Point.y})")
+
             self.vertex_list.append(novo_Point)
         except ValueError as e:
-            st.error(f"Invalid input. {e}")
+            print(f"Invalid input. {e}")
             pass
 
 if __name__ == "__main__":

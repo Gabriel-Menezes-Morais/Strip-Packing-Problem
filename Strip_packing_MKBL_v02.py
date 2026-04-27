@@ -191,11 +191,11 @@ while True:
                             vertices = [(v.x + plot_pos.x, v.y + plot_pos.y) for v in polygons[plot_type_idx].vertex_list]
                             vertices.append(vertices[0])  # Fechar o polígono
                             xs, ys = zip(*vertices)
-                            plt.plot(xs, ys, label=f'Polygon Type {plot_type_idx} Copy {plot_copy_idx}')
+                            #plt.plot(xs, ys, label=f'Polygon Type {plot_type_idx} Copy {plot_copy_idx}')
                         # Defining strip height for visualization
-                        plt.axhline(y=height, color='r', linestyle='--', label='Strip Height')
-                        plt.legend()
-                        plt.show()
+                        # plt.axhline(y=height, color='r', linestyle='--', label='Strip Height')
+                        # plt.legend()
+                        # plt.show()
                         
                         pos_encontrada = True
 
@@ -234,11 +234,11 @@ while True:
                 vertices = [(v.x + pos.x, v.y + pos.y) for v in polygons[Index].vertex_list]
                 vertices.append(vertices[0])  # Fechar o polígono
                 xs, ys = zip(*vertices)
-                plt.plot(xs, ys, label=f'Polygon Type {Index} Copy {idx_copy}')
+                # plt.plot(xs, ys, label=f'Polygon Type {Index} Copy {idx_copy}')
                 # Defining strip height for visualization
-                plt.axhline(y=height, color='r', linestyle='--', label='Strip Height')
-                plt.legend()
-                plt.show()
+                # plt.axhline(y=height, color='r', linestyle='--', label='Strip Height')
+                # plt.legend()
+                # plt.show()
 
                 print(f"Polygon Type {Index} Copy {idx_copy} allocated at ({polygons[Index].position[idx_copy].x}, {polygons[Index].position[idx_copy].y})")
 

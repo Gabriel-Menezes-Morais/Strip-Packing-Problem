@@ -8,7 +8,7 @@ class polygon:
         # Lista de Pontos onde cada item representa a coordenada (x,y) de uma cópia
         self.position: List[Point] = [None] * copy
         self.copy = copy
-        
+        self.area_value = 0
     
     def change_copy(self):
         """Decrementa o contador de cópias disponíveis."""
@@ -69,6 +69,7 @@ class polygon:
 
     def vertex(self, j): 
         """Solicita e armazena um vértice."""
+        # Vértices tem que ser inseridos no sentido anti-horário
         try:
             raw = input(f"Vertex {j} coordinates (x y)?\n").split()
             xy = list(map(float, raw))
@@ -80,6 +81,17 @@ class polygon:
         except ValueError as e:
             print(f"Invalid input. {e}")
             pass
+    def area(self):
+        """Calcula a área do polígono usando a fórmula de Shoelace."""
+        n = len(self.vertex_list)
+        if n < 3:
+            return 0  # Não é um polígono válido
+
+        sum1 = sum(self.vertex_list[i].x * self.vertex_list[(i + 1) % n].y for i in range(n))
+        sum2 = sum(self.vertex_list[i].y * self.vertex_list[(i + 1) % n].x for i in range(n))
+
+        self.area_value = abs(sum1 - sum2) / 2
+        return self.area_value
 
 if __name__ == "__main__":
     # Exemplo de uso
@@ -88,3 +100,4 @@ if __name__ == "__main__":
         pol.vertex(i)
     
     pol.position_get(0)  # Solicita posições para as cópias do tipo 0
+    print(f"Area of the polygon: {pol.area()}")
