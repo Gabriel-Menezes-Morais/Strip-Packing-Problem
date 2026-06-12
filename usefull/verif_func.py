@@ -2,6 +2,11 @@
 from Class.class_polygon import polygon
 import math
 from Class.class_point import Point
+from Class.class_nfp import NFP
+from Class.class_item import item
+
+EPSILON_GEOM = 1e-4
+
 def D_function(xA, yA, xB, yB, xP, yP):
     """
     Calcula o Produto Vetorial (Cross Product) entre os vetores da aresta (AB) e o ponto P.
@@ -48,7 +53,7 @@ def check_inside(nfp_poly, ref_Point, Point_teste):
         
         print(f"d = {d}")
         # Se o ponto estiver à direita (D < 0) ou na borda (D ≈ 0), NÃO há colisão
-        if d <= 0:
+        if d <= EPSILON_GEOM:
             print("Point is outside or on the edge.")
             return False
     
@@ -195,6 +200,93 @@ def Minkowski_Sum(polygons):
 
     return NFPs
 
+def MKSum_Irregular(itens):
+    """
+    Gera NFPs para dois cenários:
+    - lista de itens irregulares (cada item com atributo ``polygons``): retorna uma matriz
+    em que cada célula ``NFPs[i][j]`` contém um objeto ``NFP`` com uma lista plana de
+    NFPs, um para cada combinação entre os polígonos internos do item fixo ``i`` e do item
+    móvel ``j``.
+    Exemplo: se o item A tem 2 polígonos e o item B tem 3, então ``NFPs[A][B]`` terá 6
+    polígonos NFP armazenados dentro de um único objeto ``NFP``.
+    """
+
+    if not itens:
+        return []  # Retorna uma matriz vazia se não houver itens
+
+    
+    # itens irregulares compostos por múltiplos polígonos.
+    NFPs = []
+    for i, item_fixed in enumerate(itens):
+        NFPs.append([])
+        for j, item_mobile in enumerate(itens):
+            print(f"\nBuilding irregular NFP for item {j} sliding around fixed item {i}.")
+
+            pair_nfp = NFP(i, j)
+            for idx_fixed, polA in enumerate(item_fixed.polygons):
+                for idx_mobile, polB in enumerate(item_mobile.polygons):
+                    print(f"  - Polygon pair fixed {idx_fixed} vs mobile {idx_mobile}")
+
+                    polB_neg = get_negative_B(polB)
+                    edgesA = reorder_edges_by_angle(get_edges(polA))
+                    edgesB = reorder_edges_by_angle(get_edges(polB_neg))
+
+                    merged_edges = []
+                    ia, ib = 0, 0
+                    na, nb = len(edgesA), len(edgesB)
+
+                    while ia < na and ib < nb:
+                        vecA = edgesA[ia]
+                        vecB = edgesB[ib]
+                        angleA = get_angle(vecA)
+                        angleB = get_angle(vecB)
+                        epsilon = 1e-10
+
+                        if angleA < angleB - epsilon:
+                            merged_edges.append(vecA)
+                            ia += 1
+                        elif angleB < angleA - epsilon:
+                            merged_edges.append(vecB)
+                            ib += 1
+                        else:
+                            merged_edges.append(vecA + vecB)
+                            ia += 1
+                            ib += 1
+
+                    while ia < na:
+                        merged_edges.append(edgesA[ia])
+                        ia += 1
+
+                    while ib < nb:
+                        merged_edges.append(edgesB[ib])
+                        ib += 1
+
+                    start_idxA = bottom_left_vertex(polA.vertex_list)
+                    start_idxB = bottom_left_vertex(polB_neg.vertex_list)
+                    start_point = Point(
+                        polA.vertex_list[start_idxA].x + polB_neg.vertex_list[start_idxB].x,
+                        polA.vertex_list[start_idxA].y + polB_neg.vertex_list[start_idxB].y
+                    )
+
+                    nfp_points = [start_point]
+                    current = start_point
+
+                    for edge in merged_edges[:-1]:
+                        current = current + edge
+                        nfp_points.append(current)
+
+                    if len(merged_edges) > 0:
+                        final_check = current + merged_edges[-1]
+                        dist = math.sqrt((final_check.x - start_point.x)**2 + (final_check.y - start_point.y)**2)
+                        if dist > 1e-6:
+                            print(f"WARNING: NFP polygon doesn't close properly. Distance: {dist}")
+
+                    nfp_poly = polygon(len(nfp_points), 0)
+                    nfp_poly.vertex_list = nfp_points
+                    pair_nfp.add_polygon(nfp_poly)
+
+            NFPs[i].append(pair_nfp)
+    return NFPs
 def segment_intersectionn(p1, p2, p3, p4):
     # Calcula a interseção entre os segmentos p1p2 e p3p4
     denom = (p2.x - p1.x) * (p4.y - p3.y) - (p2.y - p1.y) * (p4.x - p3.x)
@@ -215,26 +307,21 @@ def segment_intersectionn(p1, p2, p3, p4):
     return None  # Os segmentos não se intersectam dentro dos limites 
 
 def segment_intersection(p1, p2, p3, p4):
-    """
-    Calcula a intersecção entre dois segmentos de reta: (p1, p2) e (p3, p4).
-    Retorna o Ponto de intersecção se houver, ou None caso não se cruzem.
-    """
     x1, y1 = p1.x, p1.y
     x2, y2 = p2.x, p2.y
     x3, y3 = p3.x, p3.y
     x4, y4 = p4.x, p4.y
 
-    # Denominador (produto vetorial das direções)
     den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
     if den == 0:
         return None # Linhas são paralelas ou colineares
     
-    # Parâmetros t e u das equações paramétricas das retas
     t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
     u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den
 
-    # Se t e u estiverem entre 0 e 1, os segmentos se cruzam
-    if 0 <= t <= 1 and 0 <= u <= 1:
+    # CORREÇÃO: Adicionando tolerância nas pontas dos vetores
+    eps = 1e-5
+    if -eps <= t <= 1 + eps and -eps <= u <= 1 + eps:
         intersec_x = x1 + t * (x2 - x1)
         intersec_y = y1 + t * (y2 - y1)
         return Point(intersec_x, intersec_y)
@@ -261,6 +348,7 @@ def check_inside_cand(allocated, NFPs, polygons, point, Index):
             collision = True
             break # Para de testar, já bateu
 
+
     if not collision:
         print("No collision detected for this candidate position.")
         return True
@@ -268,3 +356,32 @@ def check_inside_cand(allocated, NFPs, polygons, point, Index):
         print("Candidate position is invalid due to collision.")
         return False
         
+def check_inside_cand_irregular(allocated, NFPs, itens, point, Index):
+        
+    collision = False
+
+    for (aloc_type_idx, aloc_copy_idx) in allocated:
+    # Pegamos o NFP correto da matriz: Fixo (aloc_type) vs Móvel (idx)
+        nfp_obj = NFPs[aloc_type_idx][Index]
+
+        # Pegamos a posição exata onde a peça fixa está
+        pos_ref_alocado = itens[aloc_type_idx].position[aloc_copy_idx]
+
+        # Verificamos se a nova posição cai dentro desse NFP
+        # (Se cair dentro, significa que as formas físicas se sobrepõem)
+        pos_esc = Point(point.x, point.y)
+        print(f"Checking collision against Polygon {aloc_type_idx} (Copy {aloc_copy_idx}) at position ({pos_ref_alocado.x}, {pos_ref_alocado.y}) with test position ({pos_esc.x}, {pos_esc.y})")
+        for nfp_poly in getattr(nfp_obj, "polygons", [nfp_obj]):
+            if check_inside(nfp_poly, pos_ref_alocado, pos_esc):
+                print(f"COLLISION detected with Polygon {aloc_type_idx} (Copy {aloc_copy_idx}) at position ({pos_ref_alocado.x}, {pos_ref_alocado.y})!")
+                collision = True
+                break
+
+        if collision:
+            break # Para de testar, já bateu
+    if not collision:
+        print("No collision detected for this candidate position.")
+        return True
+    else:     
+        print("Candidate position is invalid due to collision.")
+        return False

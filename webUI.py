@@ -37,9 +37,9 @@ def is_out_of_bounds(candidate: Point, x_min: float, y_min: float, y_max: float,
 def candidate_better(candidate: Point, current: Optional[Point]) -> bool:
     if current is None:
         return True
-    if candidate.x < current.x:
+    if candidate.y < current.y:
         return True
-    if candidate.x == current.x and candidate.y < current.y:
+    if candidate.y == current.y and candidate.x < current.x:
         return True
     return False
 

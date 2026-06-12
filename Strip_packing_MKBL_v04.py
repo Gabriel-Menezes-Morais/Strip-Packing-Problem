@@ -77,7 +77,6 @@ num_p = numbers_p
 # Tolerância numérica para comparações geométricas
 EPSILON = 1e-9
 
-
 def is_out_of_bounds(candidate, x_min, y_min, y_max, strip_height, epsilon=EPSILON):
     """Valida limites da faixa com tolerância numérica."""
     if candidate.x < (x_min - epsilon):
@@ -85,6 +84,16 @@ def is_out_of_bounds(candidate, x_min, y_min, y_max, strip_height, epsilon=EPSIL
     if candidate.y > (strip_height - y_max + epsilon):
         return True
     if candidate.y < (y_min - epsilon):
+        return True
+    return False
+
+def candidate_better(candidate, current, epsilon=EPSILON):
+    """Escolhe o candidato mais à esquerda e, em caso de empate, o mais baixo, com tolerância numérica."""
+    if current is None:
+        return True
+    if candidate.x < (current.x - epsilon):
+        return True
+    if abs(candidate.y - current.y) <= epsilon and candidate.x >= (current.x - epsilon):
         return True
     return False
 
@@ -123,11 +132,29 @@ order = input("\nWhich order do you want to allocate? (0 to allocate by your cho
 print("\n--- Generating NFP Approximations ---")
 NFPs = Minkowski_Sum(polygons)
 
+
 if order == '1':
+    """ ORDENAÇÃO POR ÁREA """
     # para cada polígono, calcular a área e ordenar por área decrescente
     for pol in polygons:
         pol.area()
     sorted_polygons = sorted(enumerate(polygons), key=lambda x: x[1].area_value, reverse=True)
+    flag = 0
+    idx_copy = -1
+elif order == '2':
+    """ ORDENAÇÃO POR COMPRIMENTO MÁXIMO """
+    for pol in polygons:
+        pol.max_length()
+    sorted_polygons = sorted(enumerate(polygons), key=lambda x: x[1].max_length_x, reverse=True)
+    flag = 0
+    idx_copy = -1
+elif order == '3':
+    # Razão entre área envolvente (bounding box) e área do polígono
+    for pol in polygons:
+        pol.area()
+        pol.bounding_box_area()
+    sorted_polygons = sorted(enumerate(polygons), key=lambda x: (x[1].bounding_box_area_value / x[1].area_value), reverse=False)
+    print(f"Sorted by bounding box to area ratio: {[f'Type {idx} Ratio {pol.bounding_box_area_value / pol.area_value:.4f}' for idx, pol in sorted_polygons]}")
     flag = 0
     idx_copy = -1
 while True:
@@ -145,7 +172,7 @@ while True:
                 if idx_copy < 0 or idx_copy >= len(polygons[Index].position):
                     print("Invalid copy index.")
                     continue
-        elif order == '1':
+        elif order == '1' or order == '2' or order == '3':
             # Avança para o próximo tipo com cópias disponíveis.
             while flag < len(sorted_polygons) and polygons[sorted_polygons[flag][0]].copy <= 0:
                 flag += 1
@@ -178,8 +205,6 @@ while True:
             continue # Volta ao inicio do while
         
         X_min, X_max, Y_min, Y_max = polygons[Index].height()
-
-        collision = False
 
         # Aqui, vem a lógica principal do bottom-left. Os vértices candidatos serão as intersecções dos NFPs das peças já alocadas.
         # Para cada NFP, pegamos suas laterais e testamos intersecção com as laterais dos outros NFPs e com o eixo X, Y e o eixo de altura da faixa.
@@ -217,16 +242,16 @@ while True:
                     if not ((p1.x < -EPSILON or p1.y < -EPSILON or p1.y > height + EPSILON) and (p2.x < -EPSILON or p2.y < -EPSILON or p2.y > height + EPSILON)):
                         # Posição candidata é o ponto de intersecção do segmento com o limite da faixa
                         limit_faixa = [
-                            (Point(0, 0), Point(0, height - Y_max)), # Limite esquerdo
-                            (Point(0, 0), Point(MAX_X, 0)), # Limite inferior
-                            (Point(0, height - Y_max), Point(MAX_X, height - Y_max)) # Limite superior
+                            (Point(X_min, Y_min), Point(X_min, height - Y_max)), # Limite esquerdo viável
+                            (Point(X_min, Y_min), Point(MAX_X, Y_min)), # Limite inferior viável
+                            (Point(X_min, height - Y_max), Point(MAX_X, height - Y_max)) # Limite superior viável
                         ]
 
                         for p3, p4 in limit_faixa:
-                            # p3 e p4 definem um segmento do limite da faixa
-                            # p3 = Point(0, 0), p4 = Point(0, height - Y_max) para o limite esquerdo
-                            # p3 = Point(0, 0), p4 = Point(MAX_X, 0) para o limite inferior
-                            # p3 = Point(0, height - Y_max), p4 = Point(MAX_X, height - Y_max) para o limite superior
+                            # p3 e p4 definem um segmento do limite viável da peça
+                            # p3 = Point(X_min, Y_min), p4 = Point(X_min, height - Y_max) para o limite esquerdo
+                            # p3 = Point(X_min, Y_min), p4 = Point(MAX_X, Y_min) para o limite inferior
+                            # p3 = Point(X_min, height - Y_max), p4 = Point(MAX_X, height - Y_max) para o limite superior
                             intersec = segment_intersection(p1, p2, p3, p4)
                             print(f"Testing segment ({p1.x}, {p1.y}) to ({p2.x}, {p2.y}) against limit from ({p3.x}, {p3.y}) to ({p4.x}, {p4.y})")
                             print(f"Intersection result: {('None' if intersec is None else f'({intersec.x}, {intersec.y})')}")
@@ -238,14 +263,10 @@ while True:
                                     continue
 
                                 # Testar se um ponto é melhor para o algoritmo bottom-left do que o outro anteriormente encontrado
-                                if pos_encontrada:
-                                    if intersec.x < pos_encontrada.x or (intersec.x == pos_encontrada.x and intersec.y < pos_encontrada.y):
-                                        if check_inside_cand(allocated, NFPs, polygons, intersec, Index):
-                                            pos_encontrada = intersec
-                                else:
-                                    print(f"First candidate position found: ({intersec.x}, {intersec.y})")
-                                    if check_inside_cand(allocated, NFPs, polygons, intersec, Index):
-                                        print(f"Candidate position ({intersec.x}, {intersec.y}) is valid and inside bounds.")
+                                if check_inside_cand(allocated, NFPs, polygons, intersec, Index):
+                                    if candidate_better(intersec, pos_encontrada):
+                                        if pos_encontrada is None:
+                                            print(f"First candidate position found: ({intersec.x}, {intersec.y})")
                                         pos_encontrada = intersec
                             continue
                     # Testar intersecção do segmento com os segmentos dos NFPs das peças já alocadas
@@ -281,46 +302,39 @@ while True:
                                         continue
 
                                     # Testar se um ponto é melhor para o algoritmo bottom-left do que o outro anteriormente encontrado
-                                    if pos_encontrada:
-                                        if intersec.x < pos_encontrada.x or (intersec.x == pos_encontrada.x and intersec.y < pos_encontrada.y):
-                                            if check_inside_cand(allocated, NFPs, polygons, intersec, Index):
-                                                pos_encontrada = intersec
-                                    else:
-                                        if check_inside_cand(allocated, NFPs, polygons, intersec, Index):
+                                    if check_inside_cand(allocated, NFPs, polygons, intersec, Index):
+                                        if candidate_better(intersec, pos_encontrada):
                                             pos_encontrada = intersec
                         # CORRIGIR ESSA VERIFICAÇÃO
             print(pos_encontrada)
-            if not collision:
-                print("Allocation valid!")
-                print(f"Allocated at position ({pos_encontrada.x}, {pos_encontrada.y})") # Posição alocada
-                polygons[Index].change_copy()
-                allocated.append((Index, idx_copy))
+            
+            print(f"Allocated at position ({pos_encontrada.x}, {pos_encontrada.y})") # Posição alocada
+            polygons[Index].change_copy()
+            allocated.append((Index, idx_copy))
 
-                # Garantir que a lista de posições tem espaço suficiente
-                if len(polygons[Index].position) <= idx_copy:
-                    polygons[Index].position.extend([Point(0, 0)] * (idx_copy + 1 - len(polygons[Index].position)))
-                polygons[Index].position[idx_copy] = Point(pos_encontrada.x, pos_encontrada.y)
+            # Garantir que a lista de posições tem espaço suficiente
+            if len(polygons[Index].position) <= idx_copy:
+                polygons[Index].position.extend([Point(0, 0)] * (idx_copy + 1 - len(polygons[Index].position)))
+            polygons[Index].position[idx_copy] = Point(pos_encontrada.x, pos_encontrada.y)
 
-                # Plotar todas as peças alocadas para visualização usando matplotlib
-                for (plot_type_idx, plot_copy_idx) in allocated:
-                    plot_pos = polygons[plot_type_idx].position[plot_copy_idx]
-                    vertices = [(v.x + plot_pos.x, v.y + plot_pos.y) for v in polygons[plot_type_idx].vertex_list]
-                    vertices.append(vertices[0])  # Fechar o polígono
-                    xs, ys = zip(*vertices)
-                #     plt.plot(xs, ys, label=f'Polygon Type {plot_type_idx} Copy {plot_copy_idx}')
-                # Defining strip height for visualization
-                # plt.axhline(y=height, color='r', linestyle='--', label='Strip Height')
-                # plt.legend()
-                # plt.show()
+            # Plotar todas as peças alocadas para visualização usando matplotlib
+            for (plot_type_idx, plot_copy_idx) in allocated:
+                plot_pos = polygons[plot_type_idx].position[plot_copy_idx]
+                vertices = [(v.x + plot_pos.x, v.y + plot_pos.y) for v in polygons[plot_type_idx].vertex_list]
+                vertices.append(vertices[0])  # Fechar o polígono
+                xs, ys = zip(*vertices)
+            #     plt.plot(xs, ys, label=f'Polygon Type {plot_type_idx} Copy {plot_copy_idx}')
+            # Defining strip height for visualization
+            # plt.axhline(y=height, color='r', linestyle='--', label='Strip Height')
+            # plt.legend()
+            # plt.show()
                 
 
-                historico_animacao.append({
-                    'vertices': [Point(v.x + pos_encontrada.x, v.y + pos_encontrada.y) for v in polygons[Index].vertex_list],
-                    'tipo': Index,
-                    'copia': idx_copy
-                })
-            else:
-                print("Allocation failed due to overlap.")
+            historico_animacao.append({
+                'vertices': [Point(v.x + pos_encontrada.x, v.y + pos_encontrada.y) for v in polygons[Index].vertex_list],
+                'tipo': Index,
+                'copia': idx_copy
+            })
         
 
         elif first_place == 1:
@@ -397,37 +411,6 @@ for metric, value in summary_rows:
     print(f"| {metric.ljust(metric_width)} | {value.ljust(value_width)} |")
 print(separator)
 
-# Criar um DataFrame do pandas para exibir a tabela de resumo, onde cada coluna é uma métrica e cada linha é um valor correspondente de um determinado algoritmo ou configuração testada. Isso facilita a comparação entre diferentes abordagens ou parâmetros.
-
-# Criar DataFrame do pandas para o resumo final e criar o csv com os resultados
-
-# Conferir se ja existe o csv
-csv_file = "resumo_alocacao.csv"
-if os.path.exists(csv_file):
-    df_summary = pd.read_csv(csv_file)
-
-    # Adicionar nova linha ao DataFrame existente
-    new_row = {
-        "Algoritmo": "MKBL order by area" if order == '1' else "MKBL user choice",
-        "Allocated Pieces": len(allocated),
-        "Max Length on Strip": f"{max_length:.4f}",
-        "Total Allocation Time (s)": f"{allocation_total_time:.6f}"
-    }
-    df_summary.loc[len(df_summary)] = new_row
-    df_summary.to_csv(csv_file, index=False)
-
-else:
-    # Se o csv não existe, criar o df e salvar em um arquvio csv
-    df_summary = pd.DataFrame({
-    "Algoritmo": ["MKBL order by area" if order == '1' else "MKBL user choice"],
-    "Allocated Pieces": [len(allocated)],
-    "Max Length on Strip": [f"{max_length:.4f}"],
-    "Total Allocation Time (s)": [f"{allocation_total_time:.6f}"]
-    })
-    df_summary.to_csv(csv_file, index=False)
-    
-    
-
 # print("\nResumo final da alocacao (DataFrame do pandas)")
 # print(df_summary)
 
@@ -445,3 +428,4 @@ else:
 #         vertices = [(v.x + plot_pos.x, v.y + plot_pos.y) for v in polygons[plot_type_idx].vertex_list]
 #         f.write(f"Polygon Type {plot_type_idx} Copy {plot_copy_idx} at position ({plot_pos.x}, {plot_pos.y}) with vertices: {vertices}\n")
 
+# Testar em ordenações diferentes(crescente, decrescente).

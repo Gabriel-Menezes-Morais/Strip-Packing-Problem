@@ -1,3 +1,4 @@
+from logging import exception
 from typing import List
 from Class.class_point import Point
 
@@ -9,7 +10,9 @@ class polygon:
         self.position: List[Point] = [None] * copy
         self.copy = copy
         self.area_value = 0
-    
+        self.max_length_x = 0
+        self.max_length_y = 0
+        self.bounding_box_area_value = 0
     def change_copy(self):
         """Decrementa o contador de cópias disponíveis."""
         self.copy = self.copy - 1
@@ -81,6 +84,7 @@ class polygon:
         except ValueError as e:
             print(f"Invalid input. {e}")
             pass
+
     def area(self):
         """Calcula a área do polígono usando a fórmula de Shoelace."""
         n = len(self.vertex_list)
@@ -92,7 +96,31 @@ class polygon:
 
         self.area_value = abs(sum1 - sum2) / 2
         return self.area_value
+    def max_length(self):
+        """Calcula o comprimento máximo do polígono para ordenação."""
+        if not self.vertex_list:
+            return 0
+        all_x = [p.x for p in self.vertex_list]
+        all_y = [p.y for p in self.vertex_list]
 
+        max_length = [max(all_x) - min(all_x), max(all_y) - min(all_y)]
+        max_length_x = max_length[0]
+        max_length_y = max_length[1]
+        self.max_length_x = max_length_x
+        self.max_length_y = max_length_y
+        return max_length
+    def bounding_box_area(self):
+        """Calcula a área da 'Bounding Box' do polígono."""
+        if not self.vertex_list:
+            return 0
+        all_x = [p.x for p in self.vertex_list]
+        all_y = [p.y for p in self.vertex_list]
+
+        width = max(all_x) - min(all_x)
+        height = max(all_y) - min(all_y)
+
+        self.bounding_box_area_value = width * height
+        return width * height
 if __name__ == "__main__":
     # Exemplo de uso
     pol = polygon(3, 2)  # Polígono com 3 vértices e 2 cópias
@@ -101,3 +129,4 @@ if __name__ == "__main__":
     
     pol.position_get(0)  # Solicita posições para as cópias do tipo 0
     print(f"Area of the polygon: {pol.area()}")
+    print(f"Bounding box area of the polygon: {pol.bounding_box_area()}")

@@ -1,0 +1,16 @@
+instance,runs_needed,total_time_s,average_time_s
+instance_three_area,134,1.012972,0.007559
+instance_three_choice,124,1.000763,0.008071
+instance_three_len,124,1.003083,0.008089
+instance_threep2_area,113,1.000631,0.008855
+instance_threep2_choice,119,1.006986,0.008462
+instance_threep2_len,138,1.001297,0.007256
+instance_threep2w9_area,125,1.000687,0.008005
+instance_threep2w9_choice,143,1.004441,0.007024
+instance_threep2w9_len,139,1.000452,0.007197
+instance_threep3_area,42,1.020302,0.024293
+instance_threep3_choice,40,1.002524,0.025063
+instance_threep3_len,36,1.000022,0.027778
+instance_threep3w9_area,30,1.009608,0.033654
+instance_threep3w9_choice,35,1.011355,0.028896
+instance_threep3w9_len,36,1.003665,0.027880
