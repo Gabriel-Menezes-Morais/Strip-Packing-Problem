@@ -1,0 +1,5 @@
+Algoritmo,Allocated Pieces,Maximum Length on Strip,Total Allocation Time (s)
+Bottom-Left (Max Length Order),6,9.2667,0.008489
+Bottom-Left (Max Length Order),6,9.2667,0.012013
+Bottom-Left (Max Length Order),6,9.2667,0.008761
+Bottom-Left (Max Length Order),6,9.2667,0.014056

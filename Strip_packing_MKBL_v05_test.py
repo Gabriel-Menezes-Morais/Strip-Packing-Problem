@@ -14,7 +14,7 @@ Ainda que não alcance a solução ótima. Ainda sim, de acordo com o artigo
 """
 
 # Para compilar:
-# Get-Content Instances/instance02.txt | python Strip_packing__MKBL.py
+# Get-Content irreg_instances/instance_albano | python Strip_packing_MKBL_v05_test.py
 EPSILON = 1e-9
 
 def is_out_of_bounds(candidate, x_min, y_min, y_max, strip_height, epsilon=EPSILON):
@@ -93,7 +93,7 @@ def mostrar_resultado_final(allocated, itens, strip_height):
     ax.set_ylim(0, strip_height + 2)
     ax.set_aspect('equal')
     ax.axhline(y=strip_height, color='r', linestyle='--', label='Strip Height')
-    plt.title("Resultado Final - Left-Bottom (Corrigido Visualmente)")
+    plt.title("Final Allocation Result")
     plt.legend(loc='upper right')
     plt.show()
 
@@ -109,10 +109,8 @@ def mostrar_animacao(historico, strip_height):
     ax.set_xlim(0, max_x)
     ax.set_ylim(0, strip_height + 2)
     ax.set_aspect('equal')
-    
-    # Linha da altura da faixa
     ax.axhline(y=strip_height, color='r', linestyle='--', label='Strip Height')
-    
+
     def update(frame):
         peca = historico[frame]
         artists = []
@@ -138,7 +136,7 @@ def mostrar_animacao(historico, strip_height):
         return artists
 
     ani = animation.FuncAnimation(
-        fig, update, frames=len(historico), interval=1000, blit=True
+        fig, update, frames=len(historico), interval=1000, blit=False
     )
 
     plt.title("Sequência de Alocação - Bottom-Left")

@@ -1,6 +1,8 @@
 import time
 import pandas as pd
 import os
+import sys
+import csv
 
 from usefull.verif_func import Minkowski_Sum, check_inside, Minkowski_Sum, segment_intersection, check_inside_cand
 from Class.class_polygon import polygon
@@ -76,6 +78,19 @@ num_p = numbers_p
 
 # Tolerância numérica para comparações geométricas
 EPSILON = 1e-9
+
+# ================================================
+# Definição do nome do arquivo de instância e diretório de resultados
+# ================================================
+
+instance_stem = "instance_output"
+if len(sys.argv) > 2:
+    instance_stem = sys.argv[2]
+elif len(sys.argv) > 1:
+    instance_stem = os.path.splitext(os.path.basename(sys.argv[1]))[0]
+
+results_dir = "results"
+os.makedirs(results_dir, exist_ok=True)
 
 def is_out_of_bounds(candidate, x_min, y_min, y_max, strip_height, epsilon=EPSILON):
     """Valida limites da faixa com tolerância numérica."""
@@ -382,9 +397,11 @@ while True:
 
 allocation_total_time = time.perf_counter() - allocation_start_time
 
-mostrar_animacao(historico_animacao, height)
+# ==================================================
+# Espaço para mostrar animação
+# ==================================================
 
-# Resumo final em formato de tabela.
+#mostrar_animacao(historico_animacao, height)
 
 if historico_animacao:
     max_length = max(v.x for h in historico_animacao for v in h['vertices'])
@@ -392,10 +409,36 @@ else:
     max_length = 0.0
 
 summary_rows = [
-    ("Pecas alocadas", str(len(allocated))),
-    ("Comprimento maximo na faixa", f"{max_length:.4f}"),
-    ("Tempo total de alocacao (s)", f"{allocation_total_time:.6f}"),
+    ("Allocated Pieces", str(len(allocated))),
+    ("Maximum Length on Strip", f"{max_length:.4f}"),
+    ("Total Allocation Time (s)", f"{allocation_total_time:.6f}"),
 ]
+
+
+# ====================================================
+# Espaço para criação do csv
+# ====================================================
+
+csv_output_path = os.path.join(results_dir, f"{instance_stem}.csv")
+
+order_name = {
+    '0': "Bottom-Left (User Choice)",
+    '1': "Bottom-Left (Area Order)",
+    '2': "Bottom-Left (Max Length Order)",
+    '3': "Bottom-Left (Bounding Box to Area Ratio Order)"
+}.get(order, "Bottom-Left (Unknown Order)")
+df_summary = pd.DataFrame([
+    {
+        "Algoritmo": order_name,
+        "Allocated Pieces": len(allocated),
+        "Maximum Length on Strip": f"{max_length:.4f}",
+        "Total Allocation Time (s)": f"{allocation_total_time:.6f}",
+    }
+])
+
+# =====================================================
+# Impressão do resumo final em formato de tabela
+# =====================================================
 
 header_metric = "Metrica"
 header_value = "Valor"
@@ -410,6 +453,27 @@ print(separator)
 for metric, value in summary_rows:
     print(f"| {metric.ljust(metric_width)} | {value.ljust(value_width)} |")
 print(separator)
+
+
+# ====================================================
+# Espaço para salvar o csv
+# ====================================================
+
+try:
+    csv_row = df_summary.iloc[0].to_dict()
+    file_exists = os.path.exists(csv_output_path) and os.path.getsize(csv_output_path) > 0
+    with open(csv_output_path, 'a', newline='', encoding='utf-8') as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=list(csv_row.keys()))
+        if not file_exists:
+            writer.writeheader()
+        writer.writerow(csv_row)
+    print(f"CSV salvo em: {csv_output_path} (append)")
+except Exception as e:
+    print(f"Falha ao salvar CSV: {e}")
+
+# ====================================================
+# Espaço para salvar o txt para utilizar em TikZ ou LaTeX
+# ====================================================
 
 # print("\nResumo final da alocacao (DataFrame do pandas)")
 # print(df_summary)

@@ -26,6 +26,9 @@ target_seconds = 1.0
 # Proteção contra loops infinitos
 max_runs = 100000
 
+results_dir = "results"
+os.makedirs(results_dir, exist_ok=True)
+
 python_exe = os.path.join(".venv", "Scripts", "python.exe")
 script_name = "Strip_packing_MKBL_v04.py"
 
@@ -62,7 +65,7 @@ for instance_path in instance_files:
             print(f"  Rodada {run_num}... ", end="", flush=True)
 
             result = subprocess.run(
-                [python_exe, script_name, instance_path],
+                [python_exe, script_name, instance_path, instance_name],
                 input=instance_content,
                 capture_output=True,
                 text=True,
@@ -74,12 +77,12 @@ for instance_path in instance_files:
             csv_time = None
             try:
                 # Nome esperado: <instance_name>.csv (p.ex. instance_three_area.csv)
-                expected_csv = f"{instance_name}.csv"
+                expected_csv = os.path.join(results_dir, f"{instance_name}.csv")
                 candidates = []
                 if os.path.exists(expected_csv):
                     candidates = [expected_csv]
                 else:
-                    candidates = sorted(glob.glob(f"{instance_name}*.csv"), key=os.path.getmtime, reverse=True)
+                    candidates = sorted(glob.glob(os.path.join(results_dir, f"{instance_name}*.csv")), key=os.path.getmtime, reverse=True)
 
                 if candidates:
                     csv_file = candidates[0]
@@ -141,9 +144,8 @@ print(f"✓ Concluído!")
 print(f"CSVs gerados:")
 
 # Listar os CSVs criados
-csvs = sorted(glob.glob("instance_*.csv"))
+csvs = sorted(glob.glob(os.path.join(results_dir, "instance_*.csv")))
 for csv in csvs:
     rows = len(open(csv).readlines()) - 1  # Subtrair header
     print(f"  - {csv} ({rows} linhas)")
 
-print(f"\nAgora execute 'estat.ipynb' para visualizar a tabela consolidada!")
