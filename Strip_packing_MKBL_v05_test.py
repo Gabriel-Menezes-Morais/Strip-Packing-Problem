@@ -323,7 +323,7 @@ while True:
         if first_place == 0:
             MAX_X = 999999
             pos_encontrada = None
-
+            
             for (aloc_type_idx, aloc_copy_idx) in allocated:
                 nfp_obj = NFPs[aloc_type_idx][Index]
                 pos_ref_alocado = itens[aloc_type_idx].position[aloc_copy_idx]
@@ -537,3 +537,8 @@ print(separator)
 #         f.write(f"Polygon Type {plot_type_idx} Copy {plot_copy_idx} at position ({plot_pos.x}, {plot_pos.y}) with vertices: {vertices}\n")
 
 # Testar em ordenações diferentes(crescente, decrescente).
+
+# Linha vermelha na vertical
+# Acabar na altura máxima
+
+
