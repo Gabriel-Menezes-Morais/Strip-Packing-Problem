@@ -320,7 +320,7 @@ while True:
                                     if check_inside_cand(allocated, NFPs, polygons, intersec, Index):
                                         if candidate_better(intersec, pos_encontrada):
                                             pos_encontrada = intersec
-                        # CORRIGIR ESSA VERIFICAÇÃO
+                        
             print(pos_encontrada)
             
             print(f"Allocated at position ({pos_encontrada.x}, {pos_encontrada.y})") # Posição alocada

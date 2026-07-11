@@ -1,0 +1,22 @@
+Algoritmo,Allocated Pieces,Maximum Length on Strip,Total Allocation Time (s)
+Bottom-Left (Area Order),10,29.3077,8.472340
+Bottom-Left (Area Order),16,138.6000,3.080904
+Bottom-Left (Area Order),8,5789.2800,6.062277
+Bottom-Left (Area Order),16,138.6000,2.775714
+Bottom-Left (Area Order),10,147.5456,0.686992
+Bottom-Left (Area Order),12,42.0000,1.015485
+Bottom-Left (Area Order),25,12.0000,68.663633
+Bottom-Left (Area Order),10,29.3077,7.814149
+Bottom-Left (Area Order),16,138.6000,2.850469
+Bottom-Left (Area Order),4,7.5000,0.436789
+Bottom-Left (Area Order),16,138.6000,3.247659
+Bottom-Left (Area Order),16,163.2551,2.392206
+Bottom-Left (Area Order),16,163.2551,3.135581
+Bottom-Left (Area Order),10,147.5456,0.859668
+Bottom-Left (Max Length Order),10,142.2425,2.273872
+Bottom-Left (Area Order),12,42.0000,2.804930
+Bottom-Left (Area Order),25,12.0000,153.868893
+Bottom-Left (Area Order),0,0.0000,0.150857
+Bottom-Left (Area Order),0,0.0000,0.151268
+Bottom-Left (Area Order),25,12.0000,62.944563
+Bottom-Left (Area Order),25,13.0000,51.838244

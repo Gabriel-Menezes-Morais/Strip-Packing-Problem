@@ -1,6 +1,8 @@
 import time
 import pandas as pd
 import os
+import sys
+import csv
 
 from usefull.verif_func import MKSum_Irregular, Minkowski_Sum, check_inside, Minkowski_Sum, segment_intersection, check_inside_cand_irregular
 from Class.class_polygon import polygon
@@ -8,14 +10,16 @@ from Class.class_point import Point
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from Class.class_item import item
-"""
-Nesse algoritmo, iremos desenvolver a heurística bottom-left, de modo a resolver o strip packing problem de maneira rápida e eficaz.
-Ainda que não alcance a solução ótima. Ainda sim, de acordo com o artigo 
-"""
+
 
 # Para compilar:
 # Get-Content irreg_instances/instance_albano | python Strip_packing_MKBL_v05_test.py
+
 EPSILON = 1e-9
+
+# ====================================================
+# Funções auxiliares
+# ====================================================
 
 def is_out_of_bounds(candidate, x_min, y_min, y_max, strip_height, epsilon=EPSILON):
     """Valida limites da faixa com tolerância numérica."""
@@ -52,6 +56,10 @@ def item_vertices_at_position(item_obj, position, ref_point=None):
 
 def flatten_points(polygons_points):
     return [point for polygon_points in polygons_points for point in polygon_points]
+
+# ===========================================================
+# Funções de visualização
+# ===========================================================
 
 def mostrar_resultado_final(allocated, itens, strip_height):
     if not allocated:
@@ -161,12 +169,25 @@ limits_x = []
 limits_y = []
 limits_x.append(0)
 limits_y.append(0)
+
 # Tolerância numérica para comparações geométricas
 EPSILON = 1e-9
 
 height = int(input("What is the strip height?\n"))
 numbers_i = int(input("How many types of itens?\n"))
 num_i = numbers_i
+# ================================================
+# Definição do nome do arquivo de instância e diretório de resultados
+# ================================================
+
+instance_stem = "irreg_instance_output"
+if len(sys.argv) > 2:
+    instance_stem = sys.argv[2]
+elif len(sys.argv) > 1:
+    instance_stem = os.path.splitext(os.path.basename(sys.argv[1]))[0]
+
+results_dir = "results"
+os.makedirs(results_dir, exist_ok=True)
 
 #==============================================
 # Definição dos Itens
@@ -213,6 +234,11 @@ for item_idx in range(num_i):
 
 # A matriz NFPs[i][j] guarda a geometria que define onde J não pode encostar em I.
 
+# LIMPANDO VÉRTICES COLINEARES DE TODAS AS PEÇAS
+for item_obj in itens: # 'itens' é a sua lista principal de peças
+    for pol in item_obj.polygons:
+        pol.remove_collinear()
+    
 print("\n--- Generating NFP Approximations ---")
 
 NFPs = MKSum_Irregular(itens)
@@ -428,6 +454,8 @@ while True:
             })
 
             #==========================================
+            # Fim do bloco de alocação para peças subsequentes
+            #==========================================
 
         elif first_place == 1:
             
@@ -490,6 +518,10 @@ while True:
 
 allocation_total_time = time.perf_counter() - allocation_start_time
 
+# =========================================================
+# Espaçi para mostrar animação
+# ========================================================
+
 mostrar_animacao(historico_animacao, height)
 mostrar_resultado_final(allocated, itens, height)
 # Resumo final em formato de tabela.
@@ -504,6 +536,31 @@ summary_rows = [
     ("Comprimento maximo na faixa", f"{max_length:.4f}"),
     ("Tempo total de alocacao (s)", f"{allocation_total_time:.6f}"),
 ]
+
+# ==========================================
+# Espaço para criação do csv
+# ==========================================
+csv_output_path = os.path.join(results_dir, f"{instance_stem}.csv")
+
+order_name = {
+    '0': "Bottom-Left (User Choice)",
+    '1': "Bottom-Left (Area Order)",
+    '2': "Bottom-Left (Max Length Order)",
+    '3': "Bottom-Left (Bounding Box to Area Ratio Order)"
+}.get(order, "Bottom-Left (Unknown Order)")
+df_summary = pd.DataFrame([
+    {
+        "Algoritmo": order_name,
+        "Allocated Pieces": len(allocated),
+        "Maximum Length on Strip": f"{max_length:.4f}",
+        "Total Allocation Time (s)": f"{allocation_total_time:.6f}",
+    }
+])
+
+# ==========================================
+# Espaço para impressão do resumo final em formato de tabela
+# ==========================================
+
 
 header_metric = "Metrica"
 header_value = "Valor"
@@ -521,6 +578,26 @@ print(separator)
 
 # print("\nResumo final da alocacao (DataFrame do pandas)")
 # print(df_summary)
+
+# =========================================
+# Espaço para salvar o resumo final em um arquivo CSV
+# =========================================
+try:
+    csv_row = df_summary.iloc[0].to_dict()
+    file_exists = os.path.exists(csv_output_path) and os.path.getsize(csv_output_path) > 0
+    with open(csv_output_path, 'a', newline='', encoding='utf-8') as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=list(csv_row.keys()))
+        if not file_exists:
+            writer.writeheader()
+        writer.writerow(csv_row)
+    print(f"CSV salvo em: {csv_output_path} (append)")
+except Exception as e:
+    print(f"Falha ao salvar CSV: {e}")
+
+# ==========================================
+# Espaço para salvar coordenadas para impressão em Tikz
+# =========================================
+
 
 # # Imprimir os vértices de cada peça alocada para armazenar em um arquivo de texto ou para análise posterior
 # print("\nVertices de cada peça alocada:")

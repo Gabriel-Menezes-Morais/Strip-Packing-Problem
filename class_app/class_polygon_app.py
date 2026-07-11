@@ -80,6 +80,28 @@ class polygon:
         except ValueError as e:
             print(f"Invalid input. {e}")
             pass
+    def remove_collinear(self):
+        """Remove vértices que estão na mesma linha (colineares), limpando a geometria."""
+        n = len(self.vertex_list)
+        if n <= 3:
+            return # Não mexe se for um triângulo ou linha
+
+        cleaned = []
+        for i in range(n):
+            p_prev = self.vertex_list[(i - 1) % n]
+            p_curr = self.vertex_list[i]
+            p_next = self.vertex_list[(i + 1) % n]
+            
+            # Produto vetorial (Cross Product)
+            # Se for 0 (ou muito perto de 0), os 3 pontos formam uma reta perfeita
+            cross_product = (p_curr.x - p_prev.x) * (p_next.y - p_curr.y) - (p_curr.y - p_prev.y) * (p_next.x - p_curr.x)
+            
+            if abs(cross_product) > 1e-6: # 1e-6 é a margem de tolerância
+                cleaned.append(p_curr) # Só mantém o ponto se ele realmente for uma quina
+        
+        # Atualiza a peça apenas com as quinas reais
+        if len(cleaned) >= 3:
+            self.vertex_list = cleaned
 
 if __name__ == "__main__":
     # Exemplo de uso

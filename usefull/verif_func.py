@@ -78,6 +78,23 @@ def reorder_edges_by_angle(edges):
     angles = [(get_angle(e), i) for i, e in enumerate(edges)]
     angles.sort()
     
+    # Se os dois angulos consecutivos forem 180 graus, somaremos as aretas consecutivas, pois elas são colineares e não precisamos de ambas para o Slope Diagram
+
+    if len(angles) > 1:
+        for i in range(len(angles)):
+            angle1, idx1 = angles[i]
+            angle2, idx2 = angles[(i + 1) % len(angles)]
+            #if abs(angle1 - angle2) > math.pi:
+            #   angle2 += 2 * math.pi
+            if abs(angle1 - angle2) < 1e-10 and angle1 == 2*math.pi:  # Tolerância para ângulos iguais
+                # Somar as arestas colineares
+                edges[idx1] = edges[idx1] + edges[idx2]
+                # Remover a aresta duplicada
+                edges.pop(idx2)
+                # Recalcular os ângulos após a modificação
+                return reorder_edges_by_angle(edges)
+
+
     start_idx = angles[0][1]
 
     # Reordenar as arestas começando pela de menor ângulo
