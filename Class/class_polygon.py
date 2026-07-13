@@ -122,7 +122,7 @@ class polygon:
         self.bounding_box_area_value = width * height
         return width * height
     def remove_collinear(self):
-        """Remove vértices que estão na mesma linha (colineares), limpando a geometria."""
+        """Remove vértices que estão na mesma linha (colineares), limpando a geometria para o slope diagram na Minkowski Sum"""
         n = len(self.vertex_list)
         if n <= 3:
             return # Não mexe se for um triângulo ou linha

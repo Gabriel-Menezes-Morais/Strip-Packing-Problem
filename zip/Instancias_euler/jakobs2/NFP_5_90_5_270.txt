@@ -1,0 +1,86 @@
+Number of parts# 
+ 9
+part 1
+number of vertices# 
+4
+vertices (x,y)#
+	-0.00 -12.00
+	-0.00 0.00
+	-4.00 4.00
+	-4.00 -16.00
+part 2
+number of vertices# 
+6
+vertices (x,y)#
+	4.00 -14.00
+	6.00 -12.00
+	6.00 -0.00
+	4.00 2.00
+	-2.00 2.00
+	-2.00 -14.00
+part 3
+number of vertices# 
+6
+vertices (x,y)#
+	8.00 -14.00
+	8.00 2.00
+	6.00 4.00
+	4.00 2.00
+	4.00 -14.00
+	6.00 -16.00
+part 4
+number of vertices# 
+6
+vertices (x,y)#
+	4.00 -14.00
+	6.00 -12.00
+	6.00 0.00
+	4.00 2.00
+	-2.00 2.00
+	-2.00 -14.00
+part 5
+number of vertices# 
+4
+vertices (x,y)#
+	12.00 -12.00
+	12.00 -0.00
+	0.00 -0.00
+	-0.00 -12.00
+part 6
+number of vertices# 
+6
+vertices (x,y)#
+	14.00 -14.00
+	14.00 2.00
+	8.00 2.00
+	6.00 -0.00
+	6.00 -12.00
+	8.00 -14.00
+part 7
+number of vertices# 
+6
+vertices (x,y)#
+	8.00 -14.00
+	8.00 2.00
+	6.00 4.00
+	4.00 2.00
+	4.00 -14.00
+	6.00 -16.00
+part 8
+number of vertices# 
+6
+vertices (x,y)#
+	14.00 -14.00
+	14.00 2.00
+	8.00 2.00
+	6.00 -0.00
+	6.00 -12.00
+	8.00 -14.00
+part 9
+number of vertices# 
+4
+vertices (x,y)#
+	16.00 4.00
+	12.00 0.00
+	12.00 -12.00
+	16.00 -16.00

@@ -1,0 +1,38 @@
+Number of parts# 
+ 4
+part 1
+number of vertices# 
+4
+vertices (x,y)#
+	-6.00 -6.00
+	0.00 0.00
+	-12.00 0.00
+	-12.00 -6.00
+part 2
+number of vertices# 
+6
+vertices (x,y)#
+	-3.00 -9.00
+	0.00 -6.00
+	0.00 0.00
+	-6.00 0.00
+	-9.00 -3.00
+	-9.00 -9.00
+part 3
+number of vertices# 
+6
+vertices (x,y)#
+	-3.00 -9.00
+	0.00 -6.00
+	0.00 0.00
+	-6.00 0.00
+	-9.00 -3.00
+	-9.00 -9.00
+part 4
+number of vertices# 
+4
+vertices (x,y)#
+	-0.00 -12.00
+	-0.00 0.00
+	-6.00 -6.00
+	-6.00 -12.00

@@ -286,9 +286,9 @@ elif order == '3':
     flag = 0
     idx_copy = -1
 while True:
-    cont = input("\nAllocate item? (y/n): ")
-    if cont.lower() != 'y': break
 
+    print("\nAllocating pieces...")
+    
     try:
         if order == '0':
             Index = int(input("\nWhich item do you want to place?"))

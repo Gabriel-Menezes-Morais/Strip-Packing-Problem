@@ -1,0 +1,22 @@
+Item1
+
+Center# 0 0
+Number of part by piece#3
+number of vertices (part 0)# 4
+vertices (x,y)#
+0.00 0.00
+0.00 3.00
+2.00 3.00
+2.00 -2.00
+number of vertices (part 1)# 4
+vertices (x,y)#
+-10.00 0.00
+0.00 0.00
+2.00 -2.00
+-12.00 -2.00
+number of vertices (part 2)# 4
+vertices (x,y)#
+-12.00 3.00
+-10.00 3.00
+-10.00 0.00
+-12.00 -2.00

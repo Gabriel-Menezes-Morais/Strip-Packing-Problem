@@ -1,0 +1,10 @@
+Number of parts# 
+ 1
+part 1
+number of vertices# 
+4
+vertices (x,y)#
+	0.00 0.00
+	2.00 478.00
+	-158.00 484.00
+	-154.00 0.00

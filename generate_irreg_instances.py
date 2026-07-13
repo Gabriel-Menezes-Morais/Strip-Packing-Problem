@@ -198,8 +198,8 @@ def main() -> int:
     parser.add_argument(
         "--copies-mode",
         choices=("fixed", "demand"),
-        default="fixed",
-        help="Use a fixed number of copies for every type or preserve the demand from general_data.txt.",
+        default="demand",
+        help="Use the demand from general_data.txt or force a fixed number of copies for every type.",
     )
     parser.add_argument(
         "--copies-value",

@@ -1,0 +1,12 @@
+Number of parts# 
+ 1
+part 1
+number of vertices# 
+6
+vertices (x,y)#
+	17.00 -22.00
+	17.00 -10.00
+	12.00 -0.00
+	0.00 -0.00
+	-5.00 -10.00
+	-5.00 -22.00

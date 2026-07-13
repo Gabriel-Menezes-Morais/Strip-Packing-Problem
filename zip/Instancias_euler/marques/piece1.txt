@@ -1,0 +1,12 @@
+Item1
+
+Center# 0 0
+Number of part by piece#1
+number of vertices (part 0)# 6
+vertices (x,y)#
+0.00 0.00
+21.00 0.00
+21.00 22.00
+14.00 28.00
+7.00 28.00
+0.00 22.00

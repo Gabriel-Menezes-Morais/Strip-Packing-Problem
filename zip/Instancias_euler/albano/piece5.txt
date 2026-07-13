@@ -1,0 +1,22 @@
+Item5
+
+Center# 0 0
+Number of part by piece#3
+number of vertices (part 0)# 4
+vertices (x,y)#
+0.00 0.00
+411.00 -65.00
+311.00 303.00
+-389.00 221.00
+number of vertices (part 1)# 5
+vertices (x,y)#
+-778.00 0.00
+-389.00 -65.00
+0.00 0.00
+-389.00 221.00
+-1089.00 321.00
+number of vertices (part 2)# 3
+vertices (x,y)#
+-1189.00 -65.00
+-778.00 0.00
+-1089.00 321.00

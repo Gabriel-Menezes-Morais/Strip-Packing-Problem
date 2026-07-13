@@ -1,0 +1,15 @@
+General Data
+width # 86
+height #104
+number cuts#0
+number defects#0
+Number type piece#8
+identity piece# 1 demand#	4 number rotation# 4 rotation #  0.00  90.00  180.00  270.00
+identity piece# 2 demand#	4 number rotation# 4 rotation #  0.00  90.00  180.00  270.00
+identity piece# 3 demand#	2 number rotation# 4 rotation #  0.00  90.00  180.00  270.00
+identity piece# 4 demand#	2 number rotation# 2 rotation #  0.00  90.00  180.00  270.00
+identity piece# 5 demand#	4 number rotation# 2 rotation #  0.00  90.00  180.00  270.00
+identity piece# 6 demand#	4 number rotation# 4 rotation #  0.00  90.00  180.00  270.00
+identity piece# 7 demand#	2 number rotation# 4 rotation #  0.00  90.00  180.00  270.00
+identity piece# 8 demand#	2 number rotation# 4 rotation #  0.00  90.00  180.00  270.00
+End General Data
