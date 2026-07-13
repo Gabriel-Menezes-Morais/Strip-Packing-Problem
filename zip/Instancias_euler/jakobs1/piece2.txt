@@ -1,9 +1,0 @@
-Item2
-
-Center# 0 0
-Number of part by piece#1
-number of vertices (part 0)# 3
-vertices (x,y)#
-0.00 0.00
-3.00 0.00
-0.00 3.00
