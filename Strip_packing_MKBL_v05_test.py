@@ -60,7 +60,6 @@ def flatten_points(polygons_points):
 # ===========================================================
 # Funções de visualização
 # ===========================================================
-
 def mostrar_resultado_final(allocated, itens, strip_height):
     if not allocated:
         print("Nenhum item alocado para plotar.")
@@ -93,14 +92,22 @@ def mostrar_resultado_final(allocated, itens, strip_height):
             ax.fill(xs, ys, color=item_color, alpha=0.4) 
 
     if all_points:
-        max_x = max(point.x for point in all_points) + 10
-        ax.set_xlim(0, max_x)
+        max_length_real = max(point.x for point in all_points)
+        # Adiciona uma margem proporcional de 5% no final para não sobrepor a borda
+        margem = max_length_real * 0.05 if max_length_real > 0 else 10
+        ax.set_xlim(0, max_length_real + margem)
+        
+        # Desenha a linha vertical vermelha no limite do comprimento
+        ax.axvline(x=max_length_real, color='r', linestyle='--', label='Max Length')
     else:
         ax.set_xlim(0, 10)
 
     ax.set_ylim(0, strip_height + 2)
     ax.set_aspect('equal')
-    ax.axhline(y=strip_height, color='r', linestyle='--', label='Strip Height')
+    
+    # Desenha a linha horizontal cinza para a altura da faixa
+    ax.axhline(y=strip_height, color='gray', linestyle='--', label='Strip Height')
+    
     plt.title("Final Allocation Result")
     plt.legend(loc='upper right')
     plt.show()
@@ -112,12 +119,18 @@ def mostrar_animacao(historico, strip_height):
 
     fig, ax = plt.subplots(figsize=(16, 5))
     
-    # Define limites do gráfico baseados nas peças alocadas
-    max_x = max([p.x for h in historico for p in h['vertices']]) + 10
-    ax.set_xlim(0, max_x)
+    # Calcula o comprimento máximo real ao longo de toda a animação
+    max_length_real = max([p.x for h in historico for p in h['vertices']])
+    
+    # Adiciona uma margem proporcional de 5% para o limite visual do gráfico
+    margem = max_length_real * 0.05 if max_length_real > 0 else 10
+    ax.set_xlim(0, max_length_real + margem)
     ax.set_ylim(0, strip_height + 2)
     ax.set_aspect('equal')
-    ax.axhline(y=strip_height, color='r', linestyle='--', label='Strip Height')
+    
+    # Linha cinza para a altura da faixa e vermelha para o comprimento máximo
+    ax.axhline(y=strip_height, color='gray', linestyle='--', label='Strip Height')
+    ax.axvline(x=max_length_real, color='r', linestyle='--', label='Max Length')
 
     def update(frame):
         peca = historico[frame]
@@ -150,13 +163,59 @@ def mostrar_animacao(historico, strip_height):
     plt.title("Sequência de Alocação - Bottom-Left")
     plt.legend(loc='upper right')
     plt.show()
-
 historico_animacao = []  # Lista para armazenar o histórico de alocações para animação  
 
 # Cronometra apenas a fase de alocação iterativa.
 allocation_start_time = time.perf_counter()
 
-
+# ==============================================
+# Função geradora de Tikz
+# ==============================================
+def export_to_tikz(allocated, itens, strip_height, max_length, filename="allocated_pieces_tikz.tex"):
+    """Gera um arquivo .tex contendo o ambiente tikzpicture com as peças alocadas."""
+    cores = ["blue", "red", "green", "orange", "purple", "cyan", "magenta", "teal", "olive", "yellow"]
+    
+    # Define um fator de escala seguro para evitar o erro "Dimension too large"
+    escala = "0.001cm"
+    
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write("% Arquivo gerado automaticamente\n")
+        f.write(f"\\begin{{tikzpicture}}[x={escala}, y={escala}]\n\n")
+        
+        f.write(f"    % Limites da faixa e eixos\n")
+        # Base da faixa (eixo X horizontal)
+        f.write(f"    \\draw[thick] (0, 0) -- ({max_length * 1.1}, 0);\n")
+        
+        # Início da faixa (eixo Y vertical)
+        f.write(f"    \\draw[thick] (0, 0) -- (0, {strip_height});\n")
+        
+        # Altura limite da faixa (agora em cinza)
+        f.write(f"    \\draw[dashed, gray, thick] (0, {strip_height}) -- ({max_length * 1.1}, {strip_height}) node[right] {{Strip Height}};\n")
+        
+        # Comprimento máximo atingido (agora em vermelho, na vertical)
+        f.write(f"    \\draw[dashed, red, thick] ({max_length}, 0) -- ({max_length}, {strip_height}) node[above, text=red] {{Max Length}};\n\n")
+        
+        for i, (plot_type_idx, plot_copy_idx) in enumerate(allocated):
+            plot_pos = itens[plot_type_idx].position[plot_copy_idx]
+            ref_point = itens[plot_type_idx].polygons[0].vertex_list[0]
+            
+            translated_polygons = item_vertices_at_position(itens[plot_type_idx], plot_pos, ref_point)
+            
+            cor_atual = cores[i % len(cores)]
+            f.write(f"    % Item Tipo {plot_type_idx} | Copia {plot_copy_idx}\n")
+            
+            for polygon_vertices in translated_polygons:
+                if not polygon_vertices:
+                    continue
+                
+                coords = " -- ".join([f"({v.x:.4f}, {v.y:.4f})" for v in polygon_vertices])
+                
+                f.write(f"    \\filldraw[fill={cor_atual}!30, draw={cor_atual}!80!black, thick] {coords} -- cycle;\n")
+            f.write("\n")
+            
+        f.write("\\end{tikzpicture}\n")
+    
+    print(f"\n[+] Arquivo TikZ salvo com sucesso em: {filename}")
 
 #==============================================
 # Configuração Inicial
@@ -596,24 +655,10 @@ except Exception as e:
 
 # ==========================================
 # Espaço para salvar coordenadas para impressão em Tikz
-# =========================================
+# ==========================================
 
-
-# # Imprimir os vértices de cada peça alocada para armazenar em um arquivo de texto ou para análise posterior
-# print("\nVertices de cada peça alocada:")
-# for (plot_type_idx, plot_copy_idx) in allocated:
-#     plot_pos = polygons[plot_type_idx].position[plot_copy_idx]
-#     vertices = [(v.x + plot_pos.x, v.y + plot_pos.y) for v in polygons[plot_type_idx].vertex_list]
-#     print(f"Polygon Type {plot_type_idx} Copy {plot_copy_idx} at position ({plot_pos.x}, {plot_pos.y}) with vertices: {vertices}")
-
-# # Armazenar em txt
-# with open("allocated_pieces_vertices.txt", "w") as f:
-#     for (plot_type_idx, plot_copy_idx) in allocated:
-#         plot_pos = polygons[plot_type_idx].position[plot_copy_idx]
-#         vertices = [(v.x + plot_pos.x, v.y + plot_pos.y) for v in polygons[plot_type_idx].vertex_list]
-#         f.write(f"Polygon Type {plot_type_idx} Copy {plot_copy_idx} at position ({plot_pos.x}, {plot_pos.y}) with vertices: {vertices}\n")
-
-# Testar em ordenações diferentes(crescente, decrescente).
+tikz_output_path = os.path.join(results_dir, f"{instance_stem}_tikz.tex")
+export_to_tikz(allocated, itens, height, max_length, tikz_output_path)
 
 # Linha vermelha na vertical
 # Acabar na altura máxima
